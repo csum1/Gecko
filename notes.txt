@@ -1,0 +1,10 @@
+
+parent decides the size and position of children
+layout manager computes positions, widgets newer position themselves
+flexbox algorithm: measure children, determine available space, distribute space, assign rectangles
+
+
+layout manager:
+traverse widget tree
+- measure
+- arrange
