@@ -17,7 +17,7 @@ public:
   Label& operator=(const Label&) = default;
   Label& operator=(Label&&) = default;
 
-  void draw(DrawContet&) const override;
+  void draw(DrawContext&) const override;
 
 private:
   std::string text_;

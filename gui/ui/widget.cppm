@@ -1,7 +1,7 @@
 module;
 #include <vector>
+#include <memory>
 export module ui:widget;
-
 import common;
 import backend;
 
@@ -18,7 +18,6 @@ public:
   virtual ~Widget() = default;
 
   virtual void update();
-
   virtual Size measure();
   virtual void arrange(const Rect&);
   virtual void draw(DrawContext&) const;
@@ -26,7 +25,7 @@ public:
   void add(Widget&&);
 
 protected:
-  std::vector<std::unique_prt<Widget>> children_;
+  std::vector<std::unique_ptr<Widget>> children_;
   Rect bounds_;
 private:
 };

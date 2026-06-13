@@ -9,8 +9,8 @@ import backend;
 
 export class Window {
   public:
-    Window(std::string&& title);    
     Window() = delete;
+    Window(std::string&& title);    
 
     Window(const Window&) = delete;
     Window(Window&&) = default;
@@ -24,7 +24,7 @@ export class Window {
   private:
     Widget root_;
     std::string title_;
-    CommandBuffer command_buffer_;
+    CommandBuffer cmd_buffer_;
     DrawContext draw_ctx_;
     Renderer renderer_;
 };

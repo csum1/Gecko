@@ -26,22 +26,6 @@ import common;
  * + reduce memory bandwidth/latency
  */
 
-export struct CommandBuffer final {
-  template <typename T>
-  T* create(CommandType type) {
-    size_t offset = data.size();
-    data.resize(offset + sizeof(CommandHeader) + sizeof(T));
-    auto* header = reinterpret_cast<CommandHeader*>(data.data() + offset);
-    auto* payload = reinterpret_cast<T*>(header + 1);
-    header->type = type;
-    header->size = sizeof(CommandHeader) + sizeof(T);
-    return payload;
-  }
-
-  // TODO: std::byte creates an alignment problem => fix it later and compare performance
-  std::vector<std::byte> data;
-};
-
 export enum class CommandType : uint32_t{
   DrawRect, DrawRoundedRect, DrawCircle, DrawText
 };
@@ -68,3 +52,18 @@ export struct DrawTextCommand {
   std::string text;
 };
 
+export struct CommandBuffer final {
+  template <typename T>
+  T* create(CommandType type) {
+    size_t offset = data.size();
+    data.resize(offset + sizeof(CommandHeader) + sizeof(T));
+    auto* header = reinterpret_cast<CommandHeader*>(data.data() + offset);
+    auto* payload = reinterpret_cast<T*>(header + 1);
+    header->type = type;
+    header->size = sizeof(CommandHeader) + sizeof(T);
+    return payload;
+  }
+
+  // TODO: std::byte creates an alignment problem => fix it later and compare performance
+  std::vector<std::byte> data;
+};

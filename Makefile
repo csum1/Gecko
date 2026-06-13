@@ -12,8 +12,7 @@ setup:
 		-DCMAKE_CXX_COMPILER=clang++ \
 		-DCMAKE_BUILD_TYPE=Debug \
 		--fresh --log-context \
-		--preset=default
-
+		--preset=vcpkg
 		# --profiling-output=cmake-trace.json --profiling-format=google-trace
 
 .PHONY: setup-rel
@@ -22,6 +21,5 @@ setup-rel:
 		-DCMAKE_CXX_COMPILER=clang++ \
 		-DCMAKE_BUILD_TYPE=Release \
 		--fresh --log-context 
-
 
 # View google-trace with ui.perfetto.dev (perfetto.dev has much more to offer)

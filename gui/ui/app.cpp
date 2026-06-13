@@ -1,10 +1,8 @@
 module;
 
-
-#include <string>
-#include <vector>
-#include <GLFW/glfw3.h>
 #include <print>
+#include <GLFW/glfw3.h>
+#include <expected>
 
 module ui;
 
@@ -20,8 +18,9 @@ void App::run() {
     std::println("{}", result.error());
     return;
   }
+  auto& window = result.value();
 
-  while(!glfwWindowShouldClose(Window)) {
+  while(!glfwWindowShouldClose(window)) {
     update();
     glfwSwapBuffers(window);
     glfwPollEvents();
@@ -56,6 +55,6 @@ std::expected<GLFWwindow*, std::string> App::create_window() {
 }
 
 void App::add_window(Window&& window) {
-  windows_.push_back(window);
+  // windows_.push_back(window);
 }
 

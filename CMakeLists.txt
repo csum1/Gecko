@@ -38,7 +38,8 @@ add_subdirectory(app)
 add_subdirectory(gui)
 add_subdirectory(test)
 
-target_link_libraries(app PRIVATE glfw3 gecko)
+target_link_libraries(gecko PRIVATE glfw)
+target_link_libraries(app PRIVATE gecko)
 
 # get info of targets
 # TARGETS, SOURCES, DIRECTORIES, TESTS, CACHE_ENTRIES

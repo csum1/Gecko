@@ -5,8 +5,8 @@ module backend;
 import :drawcommands;
 import common;
 
-DrawContext::DrawContext(RenderQueue& queue) :
-  queue_(queue) {
+DrawContext::DrawContext(CommandBuffer& cmd_buffer) :
+  cmd_buffer_(cmd_buffer) {
   
 }
 

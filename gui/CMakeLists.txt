@@ -30,8 +30,10 @@ target_sources(gecko
     backend/backend.cppm
     backend/drawcontext.cppm
     backend/drawcommands.cppm
+    backend/renderer.cppm
   PRIVATE
     backend/drawcontext.cpp
+    backend/renderer.cpp
 )
 
 set_target_properties(gecko PROPERTIES 

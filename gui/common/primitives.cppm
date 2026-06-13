@@ -1,7 +1,5 @@
 module;
-
 #include <cstdint>
-
 export module common:primitives;
 
 export struct Vec2 {
@@ -27,5 +25,3 @@ export struct Rect {
   float width;
   float height;
 };
-
-
