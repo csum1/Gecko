@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 4.1)
 # must be set before project() call
-# set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD ON)
 # THIS IS CRITICAL - Enable experimental import std support
+# cmake 4.1.0
 # set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD "d0edc3af-4c50-42ea-a356-e2862fe7a444")
+# cmake 4.3.3
+set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD "451f2fe2-a8a2-47c3-bc32-94786d8fc91b")
 
 # CMAKE_CURRENT_SOURCE_DIR : directory of individual CMakeLists.txt
 # PROJECT_SOURCE_DIR : directory of project
@@ -25,8 +27,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_SCAN_FOR_MODULES ON)
+set(CMAKE_CXX_MODULE_STD ON)
 
-# set(CMAKE_CXX_MODULE_STD ON)
 # set(CMAKE_CXX_STANDARD 23)
 # set(CMAKE_EXPERIMENTAL_CXX_MODULE_DYNDEP 1)
 # set(CMAKE_CXX_FLAGS "-stdlib=libc++ -Wno-reserved-module-identifier")

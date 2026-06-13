@@ -1,9 +1,6 @@
 module;
-
-#include <string>
-#include <print>
-
 module ui;
+import std;
 
 Window::Window(std::string&& title) : 
   title_(title),

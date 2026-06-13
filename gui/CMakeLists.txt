@@ -38,6 +38,7 @@ target_sources(gecko
 
 set_target_properties(gecko PROPERTIES 
   VERIFY_INTERFACE_HEADER_SETS ON
+  CXX_MODULE_STD ON
 )
 
 target_compile_features(gecko PRIVATE cxx_std_23)

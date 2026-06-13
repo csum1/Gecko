@@ -1,8 +1,6 @@
 module;
-
-#include <print>
-
 module ui;
+import std;
 
 Label::Label(std::string&& text) : text_(text) {
 

@@ -1,9 +1,6 @@
 module;
-
-#include <string>
-
 export module ui:window;
-
+import std;
 import :widget;
 import backend;
 

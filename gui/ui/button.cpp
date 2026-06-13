@@ -1,9 +1,6 @@
 module;
-
-#include <print>
-#include <functional>
-#include <string>
 module ui;
+import std;
 
 Button::Button(std::string text, callback cb) :
   onClick_(std::move(cb)) 

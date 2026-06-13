@@ -1,10 +1,4 @@
-#include <print>
-#include <optional>
-#include <string>
-#include <variant>
-#include <vector>
-#include <memory>
-// import std;
+import std;
 import ui;
 
 template<typename T>
@@ -85,6 +79,7 @@ void cpp11() {
 int main(){
   // cpp11();
   // ui();
+  std::println("This runs with import std;");
   App app("my App");
   app.run();
 }

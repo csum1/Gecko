@@ -1,7 +1,5 @@
 module;
-
 module backend;
-
 import :drawcommands;
 import common;
 

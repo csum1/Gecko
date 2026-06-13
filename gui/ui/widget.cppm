@@ -1,7 +1,6 @@
 module;
-#include <vector>
-#include <memory>
 export module ui:widget;
+import std;
 import common;
 import backend;
 

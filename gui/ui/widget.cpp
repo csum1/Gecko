@@ -1,7 +1,6 @@
 module;
-#include <print>
-#include <memory>
 module ui;
+import std;
 
 void Widget::update() {
   std::println("update widget");

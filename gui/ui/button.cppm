@@ -1,13 +1,6 @@
 module;
-// Global module fragment
-// outside the module system
-#include <optional>
-#include <functional>
-#include <string>
-#include <print>
-
 export module ui:button;
-
+import std;
 import :widget;
 import :label;
 import backend;
