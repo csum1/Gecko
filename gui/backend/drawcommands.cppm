@@ -5,26 +5,6 @@ export module backend:drawcommands;
 import std;
 import common;
 
-/*
- * using variants might be better than polymorphism
- * + each element has same size
- * + locality => cache friendly
- * - unused memory
- */ 
-// using DrawCommand = std::variant<
-//   DrawRectCommand,
-//   DrawRoundedRectCommand,
-//   DrawTextCommand
-// >;
-
-/*
- * Raw Command buffer
- * + tight memory packing
- * + very cache friendly
- * + avoid largest-type padding
- * + reduce memory bandwidth/latency
- */
-
 export enum class CommandType : uint32_t{
   DrawRect, DrawRoundedRect, DrawCircle, DrawText
 };

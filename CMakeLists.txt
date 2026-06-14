@@ -21,15 +21,16 @@ include(CTest)
 
 find_package(glfw3 CONFIG REQUIRED)
 find_package(glad CONFIG REQUIRED)
+find_package(Vulkan REQUIRED)
 
 set(CMAKE_COLOR_DIAGNOSTICS ON)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+# generates compile_commands.json
 set(CMAKE_CXX_SCAN_FOR_MODULES ON)
 set(CMAKE_CXX_MODULE_STD ON)
 
-# set(CMAKE_CXX_STANDARD 23)
 # set(CMAKE_EXPERIMENTAL_CXX_MODULE_DYNDEP 1)
 # set(CMAKE_CXX_FLAGS "-stdlib=libc++ -Wno-reserved-module-identifier")
 # if(NOT CMAKE_BUILD_TYPE)
@@ -40,7 +41,7 @@ add_subdirectory(app)
 add_subdirectory(gui)
 add_subdirectory(test)
 
-target_link_libraries(gecko PRIVATE glfw)
+target_link_libraries(gecko PRIVATE glfw Vulkan::Vulkan)
 target_link_libraries(app PRIVATE gecko)
 
 # get info of targets
@@ -51,7 +52,7 @@ include(CMakePrintHelpers)
 
 cmake_print_variables(testvar CMAKE_VERSION)
 
-cmake_print_properties(TARGETS app gecko cpp PROPERTIES 
+cmake_print_properties(TARGETS app gecko PROPERTIES 
   TYPE 
   # ALIASED_TARGET
 )

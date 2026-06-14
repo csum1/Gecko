@@ -18,6 +18,7 @@ export class Window {
     virtual ~Window() = default;
 
     void update();
+
   private:
     Widget root_;
     std::string title_;

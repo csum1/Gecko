@@ -1,4 +1,25 @@
+DrawCommands
+============
 
+* Variants
+  using variants might be better than polymorphism
+   + each element has same size
+   + locality => cache friendly
+   - unused memory
+ 
+  using DrawCommand = std::variant<
+    DrawRectCommand,
+    DrawRoundedRectCommand,
+    DrawTextCommand
+  >;
+
+
+* Raw Command buffer
+  + tight memory packing
+  + very cache friendly
+  + avoid largest-type padding
+  + reduce memory bandwidth/latency
+ 
 parent decides the size and position of children
 layout manager computes positions, widgets newer position themselves
 flexbox algorithm: measure children, determine available space, distribute space, assign rectangles

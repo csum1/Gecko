@@ -1,7 +1,7 @@
 module;
 export module ui:label;
-import std;
 import :widget;
+import std;
 import backend;
 
 export class Label : public Widget {
