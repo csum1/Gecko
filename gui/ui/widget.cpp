@@ -1,12 +1,10 @@
 module;
+#include <memory>
 module ui;
 import std;
 
 void Widget::update() {
   std::println("update widget");
-  // for(auto& child : children_) {
-  //   child.update();
-  // }
 }
 
 Size Widget::measure() {
@@ -17,13 +15,11 @@ void Widget::arrange(const Rect& bounds) {
   bounds_ = bounds;
 }
 
-void Widget::add(Widget&& wdg) {
-  // children_.push_back(std::unique_ptr<Widget>(wdg));
+void Widget::attach(std::unique_ptr<Widget>&& wdg) {
+  child_ = std::move(wdg);
 }
 
 void Widget::draw(DrawContext& ctx) const {
-  for (auto& child : children_) {
-    child->draw(ctx);
-  }
+  child_->draw(ctx);
 }
 

@@ -1,30 +1,44 @@
 module;
+#include <cstdint>
+#include "vulkan/vulkan.hpp"
+#include <vulkan/vulkan_raii.hpp>
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 module ui;
 import std;
 import :window;
 
-App::App(std::string&& title) : 
-  title_(title) {
+const char* AppError::what() const noexcept {
+  return message_.c_str();
+}
+
+App::App(AppSetting&& setting) : 
+  setting_(setting) {
 
 }
 
-void App::run() {
-  auto result = create_window();
-  if (!result) {
-    std::println("{}", result.error());
-    return;
+void App::init() {
+  if (!glfwInit()) {
+    throw AppError("Could not initialize glfw library");
   }
-  auto& window = result.value();
+}
+
+void App::run() {
+  init();
+  auto* window = create_window();
+  init_graphics(window);
 
   while(!glfwWindowShouldClose(window)) {
     update();
     glfwSwapBuffers(window);
     glfwPollEvents();
   }
-
+  glfwDestroyWindow(window);
   glfwTerminate();
+}
+
+void App::add_window([[maybe_unused]] Window&& window) {
+  // windows_.push_back(window);
 }
 
 void App::update() {
@@ -33,114 +47,121 @@ void App::update() {
   }
 }
 
-static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
-    VkDebugUtilsMessageSeverityFlagBitsEXT severity,
-    VkDebugUtilsMessageTypeFlagsEXT type,
-    const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
-    void* user_data) {
-    std::cerr << "Validation layer: " << callback_data->pMessage << std::endl;
-    return VK_FALSE;
+
+void App::cleanup() {
+
 }
 
-// bool check_validation_layer_support() {
-//   uint32_t layer_count;
-//   vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
-//   std::vector<VkLayerProperties> layers(layer_count);
-//   vkEnumerateInstanceLayerProperties(&layer_count, layers.data());
-//   for (const char* layer_name : validation_layers) {
-//     bool found = false;
-//     for (const auto& layerProps : layers) {
-//       if (strcmp(layer_name, layerProps.layerName) == 0) {
-//         found = true;
-//         break;
-//       }
-//     }
-//     if (!found) return false;
-//   }
-//   return true;
-// }
 
-std::expected<GLFWwindow*, std::string> App::create_window() {
+GLFWwindow* App::create_window() {
   GLFWwindow* window;
-
-  if (!glfwInit()) {
-    return std::unexpected("Could not initialize glfw library");
-  }
 
   // disable OpenGL context creation
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-  window = glfwCreateWindow(600, 400, title_.c_str(), NULL, NULL);
+  glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+  window = glfwCreateWindow(600, 400, setting_.title.c_str(), NULL, NULL);
   if (!window) {
     glfwTerminate();
-    return std::unexpected("Could not create glfw window");
+    throw AppError("Could not create glfw window");
   }
 
   glfwMakeContextCurrent(window);
 
-  // Vulkan setup
+  return window;
+}
+
+void App::init_graphics(GLFWwindow* window) {
+
   if (glfwVulkanSupported() != GLFW_TRUE) {
-    return std::unexpected("Vulkan not supported");
+    throw AppError("Vulkan not supported");
+  }
+ 
+  // Required extensions
+  // check if extensions are available
+  uint32_t glfw_extension_count;
+  const char** glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
+  std::vector required_extensions(glfw_extensions, glfw_extensions + glfw_extension_count);
+  auto extension_properties = context_.enumerateInstanceExtensionProperties();
+
+  if (setting_.verbose) {
+    std::println("[VERBOSE] Extension Properties:");
+    for (const auto& extension : extension_properties) {
+      std::cout << extension.extensionName << "\n";
+    }
   }
 
-  const char* layers[] = {
+  auto unsupported_property_it = std::ranges::find_if(required_extensions,
+    [&extension_properties](auto const &required_extension) {
+      return std::ranges::none_of(extension_properties,
+        [required_extension](auto const &extension_property) {
+          return strcmp(extension_property.extensionName, required_extension) == 0;
+        }
+      );
+    }
+  );
+
+  if (unsupported_property_it != required_extensions.end()) {
+    throw AppError("Required GLFW extension not supported: {}", *unsupported_property_it);
+  }
+
+  // Validation layers
+  std::vector<char const*> required_layers = {
     "VK_LAYER_KHRONOS_validation"
   };
 
-  // VkDebugUtilsMessengerCreateInfoEXT debug_ci{};
-  // debug_ci.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-  // debug_ci.messageSeverity =
-  //     VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-  //     VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-  // debug_ci.messageType =
-  //     VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
-  //     VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
-  //     VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-  // debug_ci.pfnUserCallback = debug_callback;
+  auto layer_properties = context_.enumerateInstanceLayerProperties();
+  auto unsupported_layer_it = std::ranges::find_if(required_layers,
+    [&layer_properties](auto const& required_layer) {
+      return std::ranges::none_of(layer_properties, 
+        [required_layer](auto const& layer_property) {
+          return strcmp(layer_property.layerName, required_layer) == 0;
+        }
+      );
+    }
+  );
 
-  VkApplicationInfo app_info{};
-  app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-  app_info.pApplicationName = "GUI with Vulkan";
-  app_info.applicationVersion = VK_MAKE_VERSION(1,0,0);
-  app_info.pEngineName = "My Engine";
-  app_info.engineVersion = VK_MAKE_VERSION(1,0,0);
-  app_info.apiVersion = VK_API_VERSION_1_3;
-
-  uint32_t extension_count;
-  const char** extensions = glfwGetRequiredInstanceExtensions(&extension_count);
-
-  // std::vector<const char*> extensions(glfw_extensions, glfw_extensions + extension_count);
-
-  VkInstanceCreateInfo instance_ci{};
-  std::memset(&instance_ci, 0, sizeof(instance_ci));
-  instance_ci.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-  instance_ci.pApplicationInfo = &app_info;
-  instance_ci.enabledExtensionCount = extension_count;
-  instance_ci.ppEnabledExtensionNames = extensions;
-  instance_ci.enabledLayerCount = 0;
-  // instance_ci.pNext = &debug_ci;
-
-  // auto func = (PFN_vkCreateDebugUtilsMessengerEXT)
-  //   vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-  // func(instance, &debugCreateInfo, nullptr, &debugMessenger);
-
-  VkInstance instance = VK_NULL_HANDLE;
-  if (vkCreateInstance(&instance_ci, nullptr, &instance) != VK_SUCCESS) {
-    return std::unexpected("Could not create Vulkan instance");
+  if (unsupported_layer_it != required_layers.end()) {
+    throw AppError("Required layer not supported: {}", *unsupported_layer_it);
   }
 
-  VkSurfaceKHR surface = VK_NULL_HANDLE;
-  if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
-    return std::unexpected("Could not create window surface");
+  // Vulkan instance setup
+  constexpr vk::ApplicationInfo app_info {
+    .pApplicationName = "GUI with Vulkan",
+      .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
+      .pEngineName = "My Engine",
+      .engineVersion = VK_MAKE_VERSION(1, 0, 0),
+      .apiVersion = vk::ApiVersion14
+  };
+
+  vk::InstanceCreateInfo instance_ci {
+    .pApplicationInfo = &app_info,
+      .enabledExtensionCount = glfw_extension_count,
+      .ppEnabledExtensionNames = glfw_extensions
+  };
+
+  throw AppError("test");
+
+  try {
+    instance_ = vk::raii::Instance(context_, instance_ci);
+    
+  } catch (const vk::SystemError& err) {
+    throw AppError("-Vulkan: {}", err.what());
+  } catch (const std::exception& err) {
+    throw AppError("{}", err.what());
   }
+
+  // if (vkCreateInstance(&instance_ci, nullptr, &instance) != VK_SUCCESS) {
+  //   return std::unexpected("Could not create Vulkan instance");
+  // }
+  //
+  // VkSurfaceKHR surface = VK_NULL_HANDLE;
+  // if (glfwCreateWindowSurface(instance_, window, nullptr, &surface) != VK_SUCCESS) {
+  //   return std::unexpected("Could not create window surface");
+  // }
 
   // if (glfwGetPhysicalDevicePresentationSupport(instance, physical_device, queue_family_index)) {
   //
   // }
 
-  return window;
+  return; 
 }
-
-void App::add_window(Window&& window) {
-  // windows_.push_back(window);
-}
-

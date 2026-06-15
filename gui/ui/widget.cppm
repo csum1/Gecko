@@ -8,10 +8,10 @@ export class Widget {
 public:
   Widget() = default;
 
-  Widget(const Widget &) = default;
+  Widget(const Widget &) = delete;
   Widget(Widget &&) = default;
 
-  Widget &operator=(const Widget &) = default;
+  Widget &operator=(const Widget &) = delete;
   Widget &operator=(Widget &&) = default;
 
   virtual ~Widget() = default;
@@ -21,10 +21,10 @@ public:
   virtual void arrange(const Rect&);
   virtual void draw(DrawContext&) const;
 
-  void add(Widget&&);
+  void attach(std::unique_ptr<Widget>&&);
 
 protected:
-  std::vector<std::unique_ptr<Widget>> children_;
+  std::unique_ptr<Widget> child_;
   Rect bounds_;
 private:
 };

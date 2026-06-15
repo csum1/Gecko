@@ -5,7 +5,8 @@ import std;
 Button::Button(std::string text, callback cb) :
   onClick_(std::move(cb)) 
 {
-  add(Label(std::move(text)));
+  auto label = std::make_unique<Label>(std::move(text));
+  attach(std::move(label));
   std::println("[Button] constructor std::string, callback");
 }
 

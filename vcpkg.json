@@ -2,6 +2,7 @@
   "dependencies": [
     "glfw3",
     "glad",
-    "vulkan"
+    "vulkan",
+    "shader-slang"
   ]
 }

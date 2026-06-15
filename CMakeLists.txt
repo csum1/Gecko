@@ -17,11 +17,20 @@ project(Gui
   VERSION 1.0 
 )
 
+if (${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
+  message(FATAL_ERROR "No in source builds.")
+endif()
+
 include(CTest)
 
 find_package(glfw3 CONFIG REQUIRED)
 find_package(glad CONFIG REQUIRED)
 find_package(Vulkan REQUIRED)
+find_package(slang CONFIG REQUIRED)
+
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 set(CMAKE_COLOR_DIAGNOSTICS ON)
 set(CMAKE_CXX_STANDARD 23)
@@ -31,27 +40,17 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_SCAN_FOR_MODULES ON)
 set(CMAKE_CXX_MODULE_STD ON)
 
-# set(CMAKE_EXPERIMENTAL_CXX_MODULE_DYNDEP 1)
-# set(CMAKE_CXX_FLAGS "-stdlib=libc++ -Wno-reserved-module-identifier")
-# if(NOT CMAKE_BUILD_TYPE)
-#   set(CMAKE_BUILD_TYPE Debug)
-# endif()
-
 add_subdirectory(app)
 add_subdirectory(gui)
 add_subdirectory(test)
 
-target_link_libraries(gecko PRIVATE glfw Vulkan::Vulkan)
 target_link_libraries(app PRIVATE gecko)
 
 # get info of targets
 # TARGETS, SOURCES, DIRECTORIES, TESTS, CACHE_ENTRIES
 set(testvar "mytest")
-
 include(CMakePrintHelpers)
-
 cmake_print_variables(testvar CMAKE_VERSION)
-
 cmake_print_properties(TARGETS app gecko PROPERTIES 
   TYPE 
   # ALIASED_TARGET
