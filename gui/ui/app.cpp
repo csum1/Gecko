@@ -24,10 +24,16 @@ void App::init() {
 }
 
 void App::run() {
+  std::println("initialize application...");
   init();
+
+  std::println("create window...");
   auto* window = create_window();
+
+  std::println("initialize graphics...");
   init_graphics(window);
 
+  std::println("enter runloop...");
   while(!glfwWindowShouldClose(window)) {
     update();
     glfwSwapBuffers(window);
@@ -70,6 +76,34 @@ GLFWwindow* App::create_window() {
   return window;
 }
 
+static VKAPI_ATTR vk::Bool32 VKAPI_CALL debug_callback(
+    vk::DebugUtilsMessageSeverityFlagBitsEXT severity,
+    vk::DebugUtilsMessageTypeFlagsEXT type,
+    const vk::DebugUtilsMessengerCallbackDataEXT *p_callback_data,
+    void *p_user_data) {
+  switch(severity) {
+    case vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose:
+      std::cerr << "[VERBOSE] ";
+      break;
+    case vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo:
+      std::cerr << "[INFO] ";
+      break;
+    case vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning:
+      std::cerr << "[WARNING] ";
+      break;
+    case vk::DebugUtilsMessageSeverityFlagBitsEXT::eError:
+      std::cerr << "[ERROR] ";
+      break;
+  }
+
+
+    // case vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral:
+    // case vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation:
+    // case vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance:
+  std::cerr << "validation layer: type " << to_string(type) << " msg: " << p_callback_data->pMessage << std::endl;
+  return vk::False;
+}
+
 void App::init_graphics(GLFWwindow* window) {
 
   if (glfwVulkanSupported() != GLFW_TRUE) {
@@ -81,6 +115,8 @@ void App::init_graphics(GLFWwindow* window) {
   uint32_t glfw_extension_count;
   const char** glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
   std::vector required_extensions(glfw_extensions, glfw_extensions + glfw_extension_count);
+  // enable validation layer
+  required_extensions.push_back(vk::EXTDebugUtilsExtensionName);
   auto extension_properties = context_.enumerateInstanceExtensionProperties();
 
   if (setting_.verbose) {
@@ -135,20 +171,40 @@ void App::init_graphics(GLFWwindow* window) {
 
   vk::InstanceCreateInfo instance_ci {
     .pApplicationInfo = &app_info,
-      .enabledExtensionCount = glfw_extension_count,
-      .ppEnabledExtensionNames = glfw_extensions
+    .enabledLayerCount = static_cast<uint32_t>(required_layers.size()),
+    .ppEnabledLayerNames = required_layers.data(),
+    .enabledExtensionCount = static_cast<uint32_t>(required_extensions.size()),
+    .ppEnabledExtensionNames = required_extensions.data()
   };
 
-  throw AppError("test");
+  instance_ = vk::raii::Instance(context_, instance_ci);
+  vk::raii::DebugUtilsMessengerEXT debug_messenger = nullptr;
 
-  try {
-    instance_ = vk::raii::Instance(context_, instance_ci);
+  // setup debug messenger
+  vk::DebugUtilsMessageSeverityFlagsEXT severity_flags(
+    vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
+    vk::DebugUtilsMessageSeverityFlagBitsEXT::eError);
+
+  vk::DebugUtilsMessageTypeFlagsEXT message_type_flags(
+      vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
+      vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
+      vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation);
+
+  vk::DebugUtilsMessengerCreateInfoEXT debug_utils_messenger_ci_ext{
+    .messageSeverity = severity_flags,
+    .messageType = message_type_flags,
+    .pfnUserCallback = &debug_callback
+  };
+
+  debug_messenger = instance_.createDebugUtilsMessengerEXT(debug_utils_messenger_ci_ext);
+
+
     
-  } catch (const vk::SystemError& err) {
-    throw AppError("-Vulkan: {}", err.what());
-  } catch (const std::exception& err) {
-    throw AppError("{}", err.what());
-  }
+  // } catch (const vk::SystemError& err) {
+  //   throw AppError("-Vulkan: {}", err.what());
+  // } catch (const std::exception& err) {
+  //   throw AppError("{}", err.what());
+  // }
 
   // if (vkCreateInstance(&instance_ci, nullptr, &instance) != VK_SUCCESS) {
   //   return std::unexpected("Could not create Vulkan instance");
