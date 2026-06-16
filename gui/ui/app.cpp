@@ -12,7 +12,7 @@ const char* AppError::what() const noexcept {
   return message_.c_str();
 }
 
-App::App(AppSetting&& setting) : 
+App::App(AppSetting&& setting) :
   setting_(setting) {
 
 }
@@ -80,7 +80,7 @@ static VKAPI_ATTR vk::Bool32 VKAPI_CALL debug_callback(
     vk::DebugUtilsMessageSeverityFlagBitsEXT severity,
     vk::DebugUtilsMessageTypeFlagsEXT type,
     const vk::DebugUtilsMessengerCallbackDataEXT *p_callback_data,
-    void *p_user_data) {
+    [[maybe_unused]] void *p_user_data) {
   switch(severity) {
     case vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose:
       std::cerr << "[VERBOSE] ";
@@ -96,11 +96,9 @@ static VKAPI_ATTR vk::Bool32 VKAPI_CALL debug_callback(
       break;
   }
 
-
-    // case vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral:
-    // case vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation:
-    // case vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance:
-  std::cerr << "validation layer: type " << to_string(type) << " msg: " << p_callback_data->pMessage << std::endl;
+  std::cerr << "validation layer:" 
+    << " type: " << to_string(type) 
+    << " msg: " << p_callback_data->pMessage << std::endl;
   return vk::False;
 }
 
@@ -198,17 +196,108 @@ void App::init_graphics(GLFWwindow* window) {
 
   debug_messenger = instance_.createDebugUtilsMessengerEXT(debug_utils_messenger_ci_ext);
 
+  // device
+  vk::raii::PhysicalDevice physical_device = nullptr;
+  auto physical_devices = instance_.enumeratePhysicalDevices();
+  if (physical_devices.empty()) {
+    throw AppError("no GPU with vulkan support");
+  }
+  std::vector<vk::raii::PhysicalDevice> usable_devices;
 
-    
+  std::cout << "=== "<< physical_devices.size() << " Devices found ===\n";
+  for (const auto& physical_device : physical_devices) {
+    auto device_properties = physical_device.getProperties();
+    auto device_features = physical_device.getFeatures();
+
+    const char* device_type;
+
+    switch (device_properties.deviceType) {
+      case vk::PhysicalDeviceType::eDiscreteGpu:
+        device_type = "DiscreteGPU";
+        break;
+      case vk::PhysicalDeviceType::eCpu:
+        device_type = "CPU";
+        break;
+      case vk::PhysicalDeviceType::eIntegratedGpu:
+        device_type = "IntegratedGpu";
+        break;
+      case vk::PhysicalDeviceType::eVirtualGpu:
+        device_type = "VirtualGpu";
+        break;
+      case vk::PhysicalDeviceType::eOther:
+        device_type = "Other";
+        break;
+    }
+
+    std::cout
+      << "== Device\n"
+      << "  name: " << device_properties.deviceName << "\n"
+      << "  device type: " << device_type
+      << "  vendor ID: " << device_properties.vendorID << "\n"
+      << "  device ID: " << device_properties.deviceID << "\n"
+      << "  api version: " << device_properties.apiVersion << "\n"
+      << "  sparseProperties: " << device_properties.sparseProperties << "\n"
+      << "  driver version: " << device_properties.driverVersion << "\n"
+      << "  geometry shader: " << device_features.geometryShader << "\n"
+      << "\n";
+
+
+    auto queue_families = physical_device.getQueueFamilyProperties();
+    bool supports_graphics = std::ranges::any_of(queue_families, [](auto const &qfp) {
+        return !!(qfp.queueFlags & vk::QueueFlagBits::eGraphics); });
+
+
+    // check device extesions
+    std::vector<const char*> required_device_extensions = {
+      vk::KHRSwapchainExtensionName
+    };
+    auto available_device_extensions = physical_device.enumerateDeviceExtensionProperties();
+    bool supports_required_extensions = std::ranges::all_of(required_device_extensions,
+      [&available_device_extensions](auto const & required_device_extension ) {
+        return std::ranges::any_of(available_device_extensions,
+          [required_device_extension](auto const & available_device_extension) {
+            return strcmp(
+                available_device_extension.extensionName, required_device_extension) == 0;
+          }
+        );
+      }
+    );
+
+    auto features = physical_device.template getFeatures2<vk::PhysicalDeviceFeatures2,
+         vk::PhysicalDeviceVulkan11Features,
+         vk::PhysicalDeviceVulkan13Features,
+         vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>();
+    bool supports_required_features =
+      features.template get<vk::PhysicalDeviceVulkan11Features>().shaderDrawParameters &&
+      features.template get<vk::PhysicalDeviceVulkan13Features>().dynamicRendering &&
+      features.template get<vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>().extendedDynamicState;
+
+    if (
+      device_properties.deviceType != vk::PhysicalDeviceType::eDiscreteGpu ||
+      !device_features.geometryShader ||
+      device_properties.apiVersion < vk::ApiVersion13 ||
+      !supports_graphics ||
+      !supports_required_extensions ||
+      !supports_required_features
+      ) {
+      continue;
+    }
+
+    usable_devices.push_back(physical_device);
+  }
+
+  if (usable_devices.empty()) {
+    throw AppError("no suitable device found");
+  }
+
+  vk::raii::Device device = nullptr;
+
   // } catch (const vk::SystemError& err) {
   //   throw AppError("-Vulkan: {}", err.what());
   // } catch (const std::exception& err) {
   //   throw AppError("{}", err.what());
   // }
 
-  // if (vkCreateInstance(&instance_ci, nullptr, &instance) != VK_SUCCESS) {
-  //   return std::unexpected("Could not create Vulkan instance");
-  // }
   //
   // VkSurfaceKHR surface = VK_NULL_HANDLE;
   // if (glfwCreateWindowSurface(instance_, window, nullptr, &surface) != VK_SUCCESS) {
